@@ -1,0 +1,60 @@
+package com.securityJasonWebToken.JWT.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.securityJasonWebToken.JWT.filter.JwtRequestFilter;
+import com.securityJasonWebToken.JWT.util.JwtUtil;
+
+@SuppressWarnings("deprecation")
+@EnableWebSecurity
+public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
+
+	@Autowired
+	private MyUserDetailsService myUserDetailsService;
+	
+	 @Autowired
+	 private JwtRequestFilter jwtRequestFilter;
+	
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.userDetailsService(myUserDetailsService);
+	}
+	
+	 //con este método le decimos a spring
+	 //que el endpoint /authenticate debe ser accesible
+	 
+	 @Override
+	 protected void configure(HttpSecurity http) throws Exception {
+	        http.csrf().disable().authorizeRequests().antMatchers("/authenticate").permitAll().anyRequest().
+	                authenticated().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+	      http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+	    }
+	
+	 
+	//para que Spring sepa que hay un bean llamado 
+	 //authenticationManager. Si no, sale error.
+	@Override
+	@Bean(name="myAuthentificationmanager")
+	public AuthenticationManager authenticationManagerBean() throws Exception{
+		
+		return super.authenticationManagerBean();
+	}
+	
+	
+	
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return NoOpPasswordEncoder.getInstance();
+	}
+}
